@@ -16,6 +16,15 @@ require 'json'
 require 'right_aws'
 require 'curb'
 require 'timeout'
+require 'daemons'
+
+
+if ARGV[0] == "debug"
+  puts "Starting in debug mode"
+else
+  puts "Starting daemon..."
+  Daemons.daemonize
+end
 
 
 # Constants
