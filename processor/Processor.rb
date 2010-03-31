@@ -19,12 +19,38 @@ require 'timeout'
 require 'daemons'
 
 
-if ARGV[0] == "debug"
-  puts "Starting in debug mode"
-else
-  puts "Starting daemon..."
-  Daemons.daemonize
+
+debug = false
+environment = "production"
+
+for i in 1..ARGV.count
+  if ARGV[i].include? "debug"
+    debug = true
+  elsif ARGV[i].include? "environment"
+    environment = ARGV[i+1]
+    i += 1
+  elsif ARGV[i].include? "help"
+    puts "Usage: ./Processor.rb [--debug] [--environment development]\n"
+    puts "Debug runs processor as a non-daemon process, logging to STDOUT."
+    puts "Environment specifies which parameters to pick from the config. (Currently ignored.)"
+    exit
+  end
 end
+
+# Get path to log file before daemonizing
+log_file = File.expand_path(File.dirname(__FILE__)).to_s + "/processor_#{environment}.log"
+
+if debug
+  logger = Logger.new STDOUT
+  logger.info "Starting in debug mode."
+else
+  puts "Starting daemon."
+  Daemons.daemonize
+  logger = Logger.new log_file, 10, 1024000
+  logger.info "Poller started."
+end
+
+logger.warn "Poller currently ignores the environment, the API keys are hardcoded."
 
 
 # Constants
@@ -105,7 +131,7 @@ class Processor
         raise
       end
       
-      puts "Received job: #{@job.body}"
+      logger.info "Received job: #{@job.body}"
       
       raise if job["meta"]["api_version"] > MAX_API_VERSION
       raise if job["meta"]["job_type"] != JOB_TYPE
@@ -215,12 +241,12 @@ class Processor
       end
       
       if not error_message.empty?
-        puts error_message
+        logger.error error_message
       end
       
       cleanup local_path, screenshots_prefix
       
-      puts "Finished job."
+      logger.info "Finished job."
     end
     
     
@@ -244,7 +270,7 @@ begin
   processor.start
 rescue
   processor.recover
-  puts "Recovered from error: " + $@.to_s
-  puts "Restarting loop."
+  logger.error "Recovered from error: " + $@.to_s
+  logger.error "Restarting loop."
   retry
 end
