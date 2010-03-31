@@ -270,7 +270,7 @@ begin
   processor.start
 rescue Exception => e
   processor.recover
-  logger.error "Recovered from error: " + e.backtrace
-  logger.error "Restarting loop."
+  logger.warn "Recovered from error: #{$@}\n#{e.backtrace}"
+  logger.warn "Restarting loop."
   retry
 end
