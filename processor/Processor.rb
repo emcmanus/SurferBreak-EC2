@@ -23,7 +23,7 @@ require 'daemons'
 debug = false
 environment = "production"
 
-for i in 1..ARGV.count
+for i in (0...(ARGV.count)) do
   if ARGV[i].include? "debug"
     debug = true
   elsif ARGV[i].include? "environment"
