@@ -268,9 +268,9 @@ processor = Processor.new "13WQ80HKRY1EJA7SH9R2", "67IJS5Tc8VQLrrougD2AJQBFyw3B2
 
 begin
   processor.start
-rescue
+rescue Exception => e
   processor.recover
-  logger.error "Recovered from error: " + $@.to_s
+  logger.error "Recovered from error: " + e.backtrace
   logger.error "Restarting loop."
   retry
 end
