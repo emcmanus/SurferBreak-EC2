@@ -60,10 +60,12 @@ JOB_TYPE          = "thumbnail_generation"
 
 
 class Processor
-  def initialize( access_key_id, secret_access_key )
+  def initialize( access_key_id, secret_access_key, logger )
     sqs = RightAws::SqsGen2.new access_key_id, secret_access_key
     @todo_queue = sqs.queue "UploadProcessingTodo"
     @done_queue = sqs.queue "UploadProcessingDone"
+    
+    @logger = logger
     
     @s3 = RightAws::S3.new access_key_id, secret_access_key
     
@@ -131,7 +133,7 @@ class Processor
         raise
       end
       
-      logger.info "Received job: #{@job.body}"
+      @logger.info "Received job: #{@job.body}"
       
       raise if job["meta"]["api_version"] > MAX_API_VERSION
       raise if job["meta"]["job_type"] != JOB_TYPE
@@ -241,12 +243,12 @@ class Processor
       end
       
       if not error_message.empty?
-        logger.error error_message
+        @logger.error error_message
       end
       
       cleanup local_path, screenshots_prefix
       
-      logger.info "Finished job."
+      @logger.info "Finished job."
     end
     
     
@@ -264,7 +266,7 @@ class Processor
     
 end
 
-processor = Processor.new "13WQ80HKRY1EJA7SH9R2", "67IJS5Tc8VQLrrougD2AJQBFyw3B2YER6dAHXvwj"
+processor = Processor.new "13WQ80HKRY1EJA7SH9R2", "67IJS5Tc8VQLrrougD2AJQBFyw3B2YER6dAHXvwj", logger
 
 begin
   processor.start
